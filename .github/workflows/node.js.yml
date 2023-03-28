@@ -5,7 +5,7 @@ name: Node.js CI
 
 on:
   push:
-    branches: ["feature/CA-43"]
+    branches: ["main"]
 
 jobs:
   build:
@@ -39,10 +39,9 @@ jobs:
         run: |
           git config user.name "GitHub Actions Bot"
           git config user.email "<>"
-
-#      - name: Patch version
-#        run: npm run patch
-#      - name: Push package.json update
-#        run: git push
-#      - name: Push tag
-#        run: git push --tags
+      - name: Patch version
+        run: npm run patch
+      - name: Push package.json update
+        run: git push
+      - name: Push tag
+        run: git push --tags
