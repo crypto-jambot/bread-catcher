@@ -1,9 +1,11 @@
 import { SecretUtil } from "@crypto-jambot/secret-manager-utils";
 import { BigNumber, Contract, providers, Wallet } from "ethers";
-import { FlashbotsBundleProvider } from "@flashbots/ethers-provider-bundle";
-import Arbitrage from "../../contracts/Arbitrage.sol/Arbitrage.json";
+import {
+    FlashbotsBundleProvider,
+    FlashbotsPrivateTransaction,
+} from "@flashbots/ethers-provider-bundle";
+import JamBot from "../../contracts/JamBot.sol/JamBot.json";
 import { TransactionInfo } from "./pubsubUtils";
-import { FlashbotsPrivateTransaction } from "@flashbots/ethers-provider-bundle/src";
 
 const walletSecretUtil = new SecretUtil();
 const deployerWalletSecretUtil = new SecretUtil();
@@ -18,6 +20,7 @@ let deployerWallet: Wallet;
 let flashbotBundleProvider: FlashbotsBundleProvider;
 export function sendBundle(data: TransactionInfo) {
     return new Promise<FlashbotsPrivateTransaction>(async (resolve, reject) => {
+        // return new Promise<SimulationResponse>(async (resolve, reject) => {
         try {
             if (!wallet || !deployerWallet || !flashbotBundleProvider) {
                 wallet = new Wallet(
@@ -36,42 +39,38 @@ export function sendBundle(data: TransactionInfo) {
                 );
             }
             const jamContract = new Contract(
-                "0xB56af9ACd06692BC2E1a45C8b6D5ee7D59A8f6C3",
-                Arbitrage.abi,
+                "0x685FF453680af0C5AA5327111e4BC5E49B240128",
+                JamBot.abi,
                 deployerWallet
             );
-            const block = await rpcProvider.getBlock("latest");
-            if (!block.baseFeePerGas) {
-                reject({
-                    message: "Unable to get baseFeePerGas",
-                    statusCode: 500,
-                });
-                return;
-            }
-            const maxBaseFeeInFutureBlock =
-                FlashbotsBundleProvider.getMaxBaseFeeInFutureBlock(
-                    block.baseFeePerGas,
-                    1
-                );
-            const priorityFee = BigNumber.from(10).pow(9);
             const executeTrade = await createTransaction(jamContract, data);
             executeTrade.gasLimit = BigNumber.from(data.gasLimit);
-            executeTrade.maxFeePerGas = priorityFee.add(
-                maxBaseFeeInFutureBlock
+            executeTrade.maxFeePerGas = BigNumber.from(data.maxFeePerGas);
+            executeTrade.maxPriorityFeePerGas = BigNumber.from(
+                data.maxPriorityFeePerGas
             );
-            executeTrade.maxPriorityFeePerGas = priorityFee;
             executeTrade.type = 2;
             executeTrade.chainId = 1;
+            // const signedBundle = await flashbotBundleProvider.signBundle([
+            //     {
+            //         signer: deployerWallet,
+            //         transaction: executeTrade,
+            //     },
+            // ]);
 
-            // resolve(
-            //     flashbotBundleProvider.sendPrivateTransaction(
-            //         {
-            //             transaction: executeTrade,
-            //             signer: deployerWallet,
-            //         },
-            //         { maxBlockNumber: (await rpcProvider.getBlockNumber()) + 5 }
-            //     )
-            // );
+            resolve(
+                // flashbotBundleProvider.simulate(
+                //     signedBundle,
+                //     (await rpcProvider.getBlockNumber()) + 1
+                // )
+                flashbotBundleProvider.sendPrivateTransaction(
+                    {
+                        transaction: executeTrade,
+                        signer: deployerWallet,
+                    },
+                    { maxBlockNumber: (await rpcProvider.getBlockNumber()) + 1 }
+                )
+            );
         } catch (err: any) {
             console.log(err);
             const body = err.body;
@@ -85,8 +84,8 @@ export function sendBundle(data: TransactionInfo) {
 
 function createTransaction(contract: Contract, data: TransactionInfo) {
     return contract.populateTransaction.executeTrade(
-        data.tokenPath,
-        data.poolPath,
-        BigNumber.from(data.tradeAmount)
+        data.startToken,
+        data.target,
+        data.payload
     );
 }
