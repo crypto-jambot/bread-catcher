@@ -9,6 +9,7 @@ pubsubRouter.post("/", async (req, res, next) => {
     if (!data) return;
     try {
         const bundle = await sendBundle(data);
+        console.log(bundle);
         //@ts-ignore
         // const response = await bundle.wait();
         // if (response === FlashbotsTransactionResolution.TransactionIncluded) {
