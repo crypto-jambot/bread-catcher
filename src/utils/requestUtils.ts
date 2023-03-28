@@ -11,7 +11,7 @@ const walletSecretUtil = new SecretUtil();
 const deployerWalletSecretUtil = new SecretUtil();
 const rpcProvider = new providers.JsonRpcProvider(
     {
-        url: "https://rabbit.dev/http",
+        url: process.env.NODE_URL as string,
     },
     1
 );
@@ -25,12 +25,12 @@ export function sendBundle(data: TransactionInfo) {
             if (!wallet || !deployerWallet || !flashbotBundleProvider) {
                 wallet = new Wallet(
                     await walletSecretUtil.getSecretString(
-                        "flashbot-signer-key"
+                        process.env.FLASH_BOTS_KEY as string
                     )
                 );
                 deployerWallet = Wallet.fromMnemonic(
                     await deployerWalletSecretUtil.getSecretString(
-                        "seed-phrase-key"
+                        process.env.SEED_PHRASE_KEY as string
                     )
                 );
                 flashbotBundleProvider = await FlashbotsBundleProvider.create(
@@ -39,7 +39,7 @@ export function sendBundle(data: TransactionInfo) {
                 );
             }
             const jamContract = new Contract(
-                "0x685FF453680af0C5AA5327111e4BC5E49B240128",
+                process.env.CONTRACT as string,
                 JamBot.abi,
                 deployerWallet
             );
