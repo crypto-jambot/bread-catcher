@@ -1,0 +1,59 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    id: Dockerizing application
+    entrypoint: bash
+    args:
+      [
+        '-c',
+        'docker build -f deployment-config/Dockerfile -t gcr.io/$PROJECT_ID/$_SERVICE_NAME:$COMMIT_SHA --build-arg NPM_TOKEN=$$NPM_TOKEN .',
+      ]
+    secretEnv:
+      - NPM_TOKEN
+  - name: gcr.io/cloud-builders/docker
+    id: Pushing docker image to container registry
+    args: ['push', 'gcr.io/$PROJECT_ID/$_SERVICE_NAME:$COMMIT_SHA']
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: Deploying to ${_REGION}
+    entrypoint: gcloud
+    args:
+      [
+        'run',
+        'deploy',
+        '$_SERVICE_NAME',
+        '--image',
+        'gcr.io/$PROJECT_ID/$_SERVICE_NAME:$COMMIT_SHA',
+        '--region',
+        '$_REGION',
+        '--service-account',
+        '$_SERVICE_ACCOUNT',
+        '--timeout',
+        '$_TIMEOUT',
+        '--set-env-vars',
+        '_CONTRACT=${_CONTRACT}',
+        '--set-env-vars',
+        'NODE_URL=${_NODE_URL}',
+        '--set-env-vars',
+        'FLASH_BOTS_KEY=${_FLASH_BOTS_KEY}',
+        '--set-env-vars',
+        'SEED_PHRASE_KEY=${_SEED_PHRASE_KEY}',
+      ]
+images:
+  - gcr.io/$PROJECT_ID/$_SERVICE_NAME:$COMMIT_SHA
+substitutions:
+  _REGION: us-central1
+  _SERVICE_ACCOUNT: bread-catcher@crypto-351521.iam.gserviceaccount.com
+  _SERVICE_NAME: bread-catcher
+  _SECRET_VERSION: latest
+  _CONTRACT: 0x685FF453680af0C5AA5327111e4BC5E49B240128
+  _NODE_URL: https://rabbit.dev/http
+  _FLASH_BOTS_KEY: flashbot-signer-key
+  _SEED_PHRASE_KEY: seed-phrase-key
+  _NPM_SECRET_KEY: npm-token-key
+  _REGISTRY_URL: https://npm.pkg.github.com/
+  _TIMEOUT: 30m
+availableSecrets:
+  secretManager:
+    - versionName: projects/$PROJECT_NUMBER/secrets/$_NPM_SECRET_KEY/versions/$_SECRET_VERSION
+      env: 'NPM_TOKEN'
+options:
+  substitution_option: ALLOW_LOOSE
