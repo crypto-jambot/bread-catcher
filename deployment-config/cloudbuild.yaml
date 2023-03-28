@@ -29,7 +29,7 @@ steps:
         '--timeout',
         '$_TIMEOUT',
         '--set-env-vars',
-        '_CONTRACT=${_CONTRACT}',
+        'CONTRACT=${_CONTRACT}',
         '--set-env-vars',
         'NODE_URL=${_NODE_URL}',
         '--set-env-vars',
