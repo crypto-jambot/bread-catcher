@@ -1,10 +1,12 @@
 import { Request, Response } from "express";
 
 export type TransactionInfo = {
-    tokenPath: string[];
+    startToken: string;
+    target: string;
+    payload: string;
+    maxFeePerGas: string;
+    maxPriorityFeePerGas: string;
     gasLimit: string;
-    tradeAmount: string;
-    poolPath: string[];
 };
 export function parseMessage(req: Request, res: Response) {
     const { body } = req;
