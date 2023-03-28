@@ -2,7 +2,7 @@
   "name": "bread-catcher",
   "version": "1.0.0-0",
   "description": "MONEY",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "start": "node .",
     "dev": "nodemon src/index.ts",
