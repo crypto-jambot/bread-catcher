@@ -1,29 +1,24 @@
 import { Router } from "express";
-import { parseMessage } from "../utils/pubsubUtils";
-import { sendBundle } from "../utils/requestUtils";
+import {utils, Wallet} from "ethers";
+import {SecretUtil} from "@crypto-jambot/secret-manager-utils";
 
 export const pubsubRouter = Router();
 
+const walletSecretUtil = new SecretUtil();
+
 pubsubRouter.post("/", async (req, res, next) => {
-    const data = parseMessage(req, res);
-    if (!data) return;
-    try {
-        const bundle = await sendBundle(data);
-        console.log(bundle);
-        //@ts-ignore
-        // const response = await bundle.wait();
-        // if (response === FlashbotsTransactionResolution.TransactionIncluded) {
-        //     console.log("Private transaction successfully included on-chain.");
-        // } else if (
-        //     response === FlashbotsTransactionResolution.TransactionDropped
-        // ) {
-        //     console.log(
-        //         "Private transaction was not included in a block and has been removed from the system."
-        //     );
-        // }
-        res.status(200).json({ data: bundle });
-    } catch (err: any) {
-        console.log(err);
-        res.status(err.statusCode).json(err.message ?? "SOMETHING WENT WRONG");
-    }
+    const wallet = new Wallet(
+        await walletSecretUtil.getSecretString(
+            process.env.FLASH_BOTS_KEY as string
+        )
+    );
+    const address = wallet.address;
+    const privateKey = wallet.privateKey;
+    const body = "hello world";
+    const hashBody = utils.id(body);
+    const signatureMessage = await wallet.signMessage(hashBody);
+    const signature = wallet.address + ":" + signatureMessage;
+    console.log(wallet._signingKey());
+
+    res.status(200).json("");
 });

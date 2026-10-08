@@ -1,8 +1,9 @@
 import { SecretUtil } from "@crypto-jambot/secret-manager-utils";
-import { BigNumber, Contract, providers, Wallet } from "ethers";
+import {BigNumber, Contract, providers, utils, Wallet} from "ethers";
 import {
-    FlashbotsBundleProvider,
-    FlashbotsPrivateTransaction,
+    FlashbotsBundleConflictWithGasPricing,
+    FlashbotsBundleProvider, FlashbotsGasPricing,
+    FlashbotsPrivateTransaction, FlashbotsTransaction,
 } from "@flashbots/ethers-provider-bundle";
 import JamBot from "../../contracts/JamBot.sol/JamBot.json";
 import { TransactionInfo } from "./pubsubUtils";
@@ -18,9 +19,8 @@ const rpcProvider = new providers.JsonRpcProvider(
 let wallet: Wallet;
 let deployerWallet: Wallet;
 let flashbotBundleProvider: FlashbotsBundleProvider;
-export function sendBundle(data: TransactionInfo) {
-    return new Promise<FlashbotsPrivateTransaction>(async (resolve, reject) => {
-        // return new Promise<SimulationResponse>(async (resolve, reject) => {
+export function createSignedBundle(data: TransactionInfo) {
+    return new Promise<Array<String>>(async (resolve, reject) => {
         try {
             if (!wallet || !deployerWallet || !flashbotBundleProvider) {
                 wallet = new Wallet(
@@ -51,26 +51,13 @@ export function sendBundle(data: TransactionInfo) {
             );
             executeTrade.type = 2;
             executeTrade.chainId = 1;
-            // const signedBundle = await flashbotBundleProvider.signBundle([
-            //     {
-            //         signer: deployerWallet,
-            //         transaction: executeTrade,
-            //     },
-            // ]);
 
-            resolve(
-                // flashbotBundleProvider.simulate(
-                //     signedBundle,
-                //     (await rpcProvider.getBlockNumber()) + 1
-                // )
-                flashbotBundleProvider.sendPrivateTransaction(
-                    {
-                        transaction: executeTrade,
-                        signer: deployerWallet,
-                    },
-                    { maxBlockNumber: (await rpcProvider.getBlockNumber()) + 1 }
-                )
-            );
+            resolve(flashbotBundleProvider.signBundle([
+                {
+                    signer: deployerWallet,
+                    transaction: executeTrade,
+                },
+            ]));
         } catch (err: any) {
             console.log(err);
             const body = err.body;
